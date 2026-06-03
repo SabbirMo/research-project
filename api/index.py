@@ -6,10 +6,9 @@ import joblib
 import os
 
 app = Flask(__name__)
-# CORS পলিসি আরও শক্তিশালী করা হলো যাতে ফাইল আপলোডে ব্রাউজার ব্লক না করে
 CORS(app, resources={r"/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}})
 
-# এআইモデル পাথ সেটাপ
+# AI Model Path Setup
 model_name = 'trained_supplier_ai.pkl'
 model_path = None
 possible_paths = [
@@ -33,7 +32,7 @@ try:
 except Exception as e:
     print(f"❌ Model load error: {e}")
 
-# গ্লোবাল ডাটাফ্রেম ভেরিয়েবল
+# Global Dataframe Holder
 uploaded_suppliers_df = None
 
 categories_config = {
@@ -48,7 +47,7 @@ categories_config = {
     'Gardening': (100, 5000, 10, 100), 'Music': (2000, 150000, 1, 5)
 }
 
-# 🛠️ স্ট্যান্ডার্ড মাল্টিপার্ট ফর্ম ফাইল আপলোড এন্ডপয়েন্ট (With OPTIONS Preflight handled)
+# 🛠️ ফ্লেক্সিবল CSV আপলোড এন্ডপয়েন্ট
 @app.route('/api/upload_csv', methods=['POST', 'OPTIONS'])
 def upload_csv():
     global uploaded_suppliers_df
@@ -57,7 +56,7 @@ def upload_csv():
         
     try:
         if 'file' not in request.files:
-            return jsonify({'error': 'No file part found in the request. Make sure you upload a valid file.'}), 400
+            return jsonify({'error': 'No file part found in request'}), 400
             
         file = request.files['file']
         if file.filename == '':
@@ -66,10 +65,15 @@ def upload_csv():
         if file and file.filename.endswith('.csv'):
             df = pd.read_csv(file)
             
-            # কলামের নামগুলো চেক করা হচ্ছে
-            required_cols = ['supplier_name', 'category', 'price', 'quality', 'reliability', 'moq', 'delivery_time', 'reviews']
-            if not all(col in df.columns for col in required_cols):
-                return jsonify({'error': f'CSV columns mismatch. Required: {", ".join(required_cols)}'}), 400
+            # 🛠️ ফিক্সড লজিক: 'supplier_name' অথবা 'name' যেকোনো একটা থাকলেই সেটিকে রিনেম করে স্ট্যান্ডার্ড করে নেবে
+            if 'supplier_name' in df.columns:
+                df = df.rename(columns={'supplier_name': 'name'})
+            
+            # মডেল প্রেডিকশনের জন্য প্রয়োজনীয় মূল ৬টি ফিচার চেক করা
+            required_features = ['price', 'quality', 'reliability', 'moq', 'delivery_time', 'reviews']
+            
+            if 'category' not in df.columns or 'name' not in df.columns or not all(col in df.columns for col in required_features):
+                return jsonify({'error': 'CSV must contain headers: name (or supplier_name), category, price, quality, reliability, moq, delivery_time, reviews'}), 400
             
             uploaded_suppliers_df = df.copy()
             unique_categories = df['category'].dropna().unique().tolist()
@@ -98,9 +102,9 @@ def search_suppliers():
         if uploaded_suppliers_df is not None and category in uploaded_suppliers_df['category'].values:
             cat_df = uploaded_suppliers_df[uploaded_suppliers_df['category'] == category].copy()
             features = cat_df[['price', 'quality', 'reliability', 'moq', 'delivery_time', 'reviews']]
+            
             predictions = model.predict(features)
             cat_df['ai_score'] = [min(max(round(score, 2), 0), 100) for score in predictions]
-            cat_df = cat_df.rename(columns={'supplier_name': 'name'})
             df = cat_df.sort_values(by='ai_score', ascending=False).reset_index(drop=True)
         else:
             if category not in categories_config:
