@@ -6,52 +6,43 @@ body {
   font-family: "Inter", sans-serif;
   min-height: 100vh;
 }
-
 .card-bg {
   background-color: #242424;
   border: 1px solid #333;
   border-radius: 12px;
 }
-
 .input-field {
   background-color: #333;
   border: 1px solid #444;
   color: white;
   transition: all 0.3s ease;
 }
-
 .input-field:focus {
   border-color: #10b981;
   outline: none;
 }
-
 .btn-green {
   background-color: #10b981;
   color: white;
   transition: all 0.2s ease;
 }
-
 .btn-green:hover {
   background-color: #059669;
 }
-
 .btn-clear {
   background-color: transparent;
   border: 1px solid #444;
   color: #aaa;
 }
-
 .btn-clear:hover {
   background-color: #333;
 }
 
-/* Table Styles */
 table {
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
 }
-
 th {
   background-color: #242424;
   color: #888;
@@ -61,41 +52,34 @@ th {
   font-size: 13px;
   border-bottom: 1px solid #333;
 }
-
 td {
   padding: 16px;
   border-bottom: 1px solid #333;
   font-size: 14px;
 }
-
 tr:last-child td {
   border-bottom: none;
 }
-
 tr:hover td {
   background-color: #2a2a2a;
 }
 
-/* Status Badges */
 .status-good {
   background-color: rgba(16, 185, 129, 0.1);
   color: #10b981;
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
-
 .status-fair {
   background-color: rgba(59, 130, 246, 0.1);
   color: #3b82f6;
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
-
 .status-poor {
   background-color: rgba(239, 68, 68, 0.1);
   color: #ef4444;
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-/* Scrollbar and Animations */
 ::-webkit-scrollbar {
   width: 6px;
 }
