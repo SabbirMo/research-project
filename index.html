@@ -4,17 +4,107 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Supplier Dashboard</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- External CSS Linked Here -->
-    <link rel="stylesheet" href="style.css" />
+    <style>
+      body {
+        background-color: #1a1a1a;
+        color: #e5e5e5;
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+      }
+      .card-bg {
+        background-color: #242424;
+        border: 1px solid #333;
+        border-radius: 12px;
+      }
+      .input-field {
+        background-color: #333;
+        border: 1px solid #444;
+        color: white;
+        transition: all 0.3s ease;
+      }
+      .input-field:focus {
+        border-color: #10b981;
+        outline: none;
+      }
+      .btn-green {
+        background-color: #10b981;
+        color: white;
+        transition: all 0.2s ease;
+      }
+      .btn-green:hover {
+        background-color: #059669;
+      }
+      .btn-clear {
+        background-color: transparent;
+        border: 1px solid #444;
+        color: #aaa;
+      }
+      .btn-clear:hover {
+        background-color: #333;
+      }
+
+      table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+      }
+      th {
+        background-color: #242424;
+        color: #888;
+        font-weight: 500;
+        text-align: left;
+        padding: 16px;
+        font-size: 13px;
+        border-bottom: 1px solid #333;
+      }
+      td {
+        padding: 16px;
+        border-bottom: 1px solid #333;
+        font-size: 14px;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover td {
+        background-color: #2a2a2a;
+      }
+
+      .status-good {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        border: 1px solid rgba(16, 185, 129, 0.2);
+      }
+      .status-fair {
+        background-color: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+      }
+      .status-poor {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
+
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #1a1a1a;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #444;
+        border-radius: 10px;
+      }
+      .bar-anim {
+        transition: width 1s ease-in-out;
+      }
+    </style>
   </head>
   <body class="p-6">
     <div class="max-w-7xl mx-auto space-y-6">
-      <!-- Top Section -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Form -->
         <div class="card-bg p-6">
           <h2 class="text-lg font-semibold border-b border-[#333] pb-4 mb-5">
             Supplier Search
@@ -81,7 +171,6 @@
           </form>
         </div>
 
-        <!-- Dynamic Progress Bars -->
         <div class="card-bg p-6">
           <h2 class="text-lg font-semibold border-b border-[#333] pb-4 mb-5">
             Top Scorer Performance (AI)
@@ -131,7 +220,6 @@
         </div>
       </div>
 
-      <!-- Middle Section: Stats Cards -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="card-bg p-5">
           <p class="text-gray-400 text-sm mb-1">Total Analyzed</p>
@@ -151,7 +239,6 @@
         </div>
       </div>
 
-      <!-- Bottom Section: Table -->
       <div>
         <h2
           class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4"
@@ -230,7 +317,7 @@
             '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Searching...';
 
           try {
-            // Final Render.com URL
+            // Final Render API Link
             const renderAPIUrl =
               "https://supplier-api-ea7m.onrender.com/api/search_suppliers";
 
@@ -323,7 +410,7 @@
               tableBody.innerHTML = `<tr><td colspan="10" class="text-red-400 text-center py-10">Error: ${result.error}</td></tr>`;
             }
           } catch (error) {
-            tableBody.innerHTML = `<tr><td colspan="10" class="text-red-400 text-center py-10">Connection failed! Make sure Render.com server is running.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="10" class="text-red-400 text-center py-10">Connection failed! Make sure Render server is running.</td></tr>`;
           }
 
           btn.innerHTML = "Find Best Supplier";
