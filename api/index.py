@@ -3,17 +3,21 @@ from flask_cors import CORS
 import pandas as pd
 import random
 import joblib
+import os
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+# Vercel er jonno Model er sothik path doriye deya
+current_dir = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(current_dir, 'trained_supplier_ai.pkl')
+
 try:
-    model = joblib.load('trained_supplier_ai.pkl')
+    model = joblib.load(model_path)
     print("✅ AI Model Loaded Successfully!")
 except Exception as e:
     print(f"❌ Model load error: {e}")
 
-# তোমার অরিজিনাল ডেটাসেটের সবগুলো ১৮টি ক্যাটাগরি এবং তাদের রেঞ্জ (Min Price, Max Price, Min MOQ, Max MOQ)
 categories_config = {
     'Laptop': (40000, 150000, 1, 10),
     'Phone': (15000, 130000, 1, 20),
@@ -35,7 +39,8 @@ categories_config = {
     'Music': (2000, 150000, 1, 5)
 }
 
-@app.route('/search_suppliers', methods=['POST', 'OPTIONS'])
+# ⚠️ KHEAL KORO: Ekhane Route e ekhon /api/search_suppliers deya ache
+@app.route('/api/search_suppliers', methods=['POST', 'OPTIONS'])
 def search_suppliers():
     if request.method == 'OPTIONS':
         return jsonify({}), 200
@@ -50,7 +55,7 @@ def search_suppliers():
         min_p, max_p, min_m, max_m = categories_config[category]
         
         suppliers = []
-        for i in range(1, 11): # ১০ জন সাপ্লায়ার তৈরি হবে
+        for i in range(1, 11): 
             price = random.randint(min_p, max_p)
             moq = random.randint(min_m, max_m)
             quality = round(random.uniform(6.0, 10.0), 1)
@@ -107,5 +112,4 @@ def search_suppliers():
         return jsonify({'error': str(e)})
 
 if __name__ == '__main__':
-    print("🚀 Starting Multi-Supplier API on http://127.0.0.1:5000")
     app.run(debug=True, port=5000)
