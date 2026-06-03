@@ -8,7 +8,7 @@ import os
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Vercel er jonno Model er sothik path doriye deya
+# Model path setup for Render/Vercel environments
 current_dir = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(current_dir, 'trained_supplier_ai.pkl')
 
@@ -18,6 +18,7 @@ try:
 except Exception as e:
     print(f"❌ Model load error: {e}")
 
+# 18 original categories with their specific ranges
 categories_config = {
     'Laptop': (40000, 150000, 1, 10),
     'Phone': (15000, 130000, 1, 20),
@@ -39,7 +40,6 @@ categories_config = {
     'Music': (2000, 150000, 1, 5)
 }
 
-# ⚠️ KHEAL KORO: Ekhane Route e ekhon /api/search_suppliers deya ache
 @app.route('/api/search_suppliers', methods=['POST', 'OPTIONS'])
 def search_suppliers():
     if request.method == 'OPTIONS':
@@ -54,8 +54,12 @@ def search_suppliers():
             
         min_p, max_p, min_m, max_m = categories_config[category]
         
+        # ⚠️ LOCK DATA: Category wise data stay consistent on clicks
+        random.seed(category)
+        
+        # ⚠️ BIGGER LIST: Generating 30 suppliers for a rich table list
         suppliers = []
-        for i in range(1, 11): 
+        for i in range(1, 31): 
             price = random.randint(min_p, max_p)
             moq = random.randint(min_m, max_m)
             quality = round(random.uniform(6.0, 10.0), 1)
@@ -73,12 +77,17 @@ def search_suppliers():
                 'reviews': reviews
             })
             
+        # Reset seed right after generation to maintain normal behavior elsewhere
+        random.seed()
+        
         df = pd.DataFrame(suppliers)
         features = df[['price', 'quality', 'reliability', 'moq', 'delivery_time', 'reviews']]
         
+        # AI Model Scoring
         predictions = model.predict(features)
         df['ai_score'] = [min(max(round(score, 2), 0), 100) for score in predictions]
         
+        # Sorting by AI Score (Rank 1 is the absolute best match)
         df = df.sort_values(by='ai_score', ascending=False).reset_index(drop=True)
         
         best_supplier = df.iloc[0]
@@ -89,6 +98,7 @@ def search_suppliers():
             supplier_data = row.to_dict()
             supplier_data['rank'] = rank
             
+            # Recommendation status logic
             if rank <= 3:
                 supplier_data['status'] = 'Recommended'
                 supplier_data['reason'] = 'Top AI Match (Best Balance)'
