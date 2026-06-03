@@ -4,7 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Supplier Dashboard</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
@@ -105,24 +104,12 @@
         background-color: #2a2a2a;
         color: white;
       }
-
-      ::-webkit-scrollbar {
-        width: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #1a1a1a;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #444;
-        border-radius: 10px;
-      }
       .bar-anim {
         transition: width 1s ease-in-out;
       }
     </style>
   </head>
   <body class="flex min-h-screen overflow-x-hidden">
-    <!-- SIDEBAR NAVBAR -->
     <div class="w-64 sidebar flex flex-col justify-between fixed h-full z-10">
       <div>
         <div class="p-6 border-b border-b-[#333]">
@@ -135,7 +122,6 @@
             Thesis Project Dashboard
           </p>
         </div>
-
         <nav class="mt-6 px-4 space-y-2">
           <button
             onclick="switchTab('supplier-scoring')"
@@ -153,7 +139,6 @@
           </button>
         </nav>
       </div>
-
       <div class="p-4 border-t border-[#333] flex items-center gap-3">
         <div
           class="w-8 h-8 rounded-full bg-[#333] flex items-center justify-center text-xs font-bold text-[#10b981]"
@@ -169,13 +154,10 @@
       </div>
     </div>
 
-    <!-- RIGHT CONTENT AREA -->
     <div class="flex-1 pl-64 w-full">
       <main class="p-8 max-w-7xl mx-auto space-y-6">
-        <!-- SECTION 1: SUPPLIER SCORING -->
         <div id="supplier-scoring-screen" class="space-y-6">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- Form -->
             <div class="card-bg p-6">
               <h2
                 class="text-lg font-semibold border-b border-[#333] pb-4 mb-5"
@@ -190,9 +172,8 @@
                     >
                     <select
                       id="category"
-                      class="input-field w-full rounded-lg px-3 py-2.5 text-sm appearance-none cursor-pointer"
+                      class="input-field w-full rounded-lg px-3 py-2.5 text-sm cursor-pointer"
                     >
-                      <!-- Original Options -->
                       <optgroup
                         label="Default Categories"
                         id="default-optgroup"
@@ -205,7 +186,6 @@
                         <option value="Fashion">Fashion</option>
                         <option value="Grocery">Grocery</option>
                       </optgroup>
-                      <!-- 🛠️ Dynamic Uploaded Options will sit here -->
                       <optgroup
                         label="Custom Uploaded Categories"
                         id="custom-optgroup"
@@ -230,7 +210,7 @@
                   <button
                     type="submit"
                     id="searchBtn"
-                    class="btn-green w-full font-semibold py-3 rounded-lg text-sm flex items-center justify-center gap-2"
+                    class="btn-green w-full font-semibold py-3 rounded-lg text-sm"
                   >
                     Find Best Supplier
                   </button>
@@ -245,7 +225,6 @@
               </form>
             </div>
 
-            <!-- Progress Bars -->
             <div class="card-bg p-6">
               <h2
                 class="text-lg font-semibold border-b border-[#333] pb-4 mb-5"
@@ -255,8 +234,8 @@
               <div class="space-y-6">
                 <div>
                   <div class="flex justify-between text-sm mb-2">
-                    <span class="font-semibold">Quality Match</span
-                    ><span id="qualityText" class="text-gray-400">0.0/10</span>
+                    <span>Quality Match</span
+                    ><span id="qualityText">0.0/10</span>
                   </div>
                   <div class="w-full bg-[#333] rounded-full h-2">
                     <div
@@ -268,8 +247,8 @@
                 </div>
                 <div>
                   <div class="flex justify-between text-sm mb-2">
-                    <span class="font-semibold">Supplier Reliability</span
-                    ><span id="reliabilityText" class="text-gray-400">0%</span>
+                    <span>Supplier Reliability</span
+                    ><span id="reliabilityText">0%</span>
                   </div>
                   <div class="w-full bg-[#333] rounded-full h-2">
                     <div
@@ -281,8 +260,8 @@
                 </div>
                 <div>
                   <div class="flex justify-between text-sm mb-2">
-                    <span class="font-semibold">AI Confidence Score</span
-                    ><span id="aiConfidenceText" class="text-gray-400">0%</span>
+                    <span>AI Confidence Score</span
+                    ><span id="aiConfidenceText">0%</span>
                   </div>
                   <div class="w-full bg-[#333] rounded-full h-2">
                     <div
@@ -296,7 +275,6 @@
             </div>
           </div>
 
-          <!-- Stats -->
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
             <div class="card-bg p-5">
               <p class="text-gray-400 text-sm mb-1">Total Analyzed</p>
@@ -316,42 +294,33 @@
             </div>
           </div>
 
-          <!-- Table -->
-          <div>
-            <h2
-              class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4"
-            >
-              All Suppliers - AI Scored
-            </h2>
-            <div class="card-bg overflow-x-auto">
-              <table class="w-full text-left border-collapse">
-                <thead>
-                  <tr>
-                    <th class="w-16">Rank</th>
-                    <th>Supplier</th>
-                    <th>Category</th>
-                    <th>Quality</th>
-                    <th>Reliability</th>
-                    <th>Delivery</th>
-                    <th>Price (BDT)</th>
-                    <th>Score</th>
-                    <th>Status</th>
-                    <th>Reason</th>
-                  </tr>
-                </thead>
-                <tbody id="tableBody">
-                  <tr>
-                    <td colspan="10" class="text-center py-10 text-gray-500">
-                      Select a category and click "Find Best Supplier"
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          <div class="card-bg overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Supplier</th>
+                  <th>Category</th>
+                  <th>Quality</th>
+                  <th>Reliability</th>
+                  <th>Delivery</th>
+                  <th>Price</th>
+                  <th>Score</th>
+                  <th>Status</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                <tr>
+                  <td colspan="10" class="text-center py-10 text-gray-500">
+                    Select a category and click "Find Best Supplier"
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <!-- SECTION 2: IMPORT CSV SCREEN -->
         <div id="import-csv-screen" class="space-y-6 hidden">
           <div
             class="card-bg p-8 max-w-2xl mx-auto text-center space-y-6 mt-10"
@@ -370,10 +339,9 @@
                 completely new market categories.
               </p>
             </div>
-
             <form id="uploadForm" class="space-y-4">
               <div
-                class="border-2 border-dashed border-[#444] hover:border-[#10b981] rounded-xl p-8 bg-[#1e1e1e] cursor-pointer transition-colors relative group"
+                class="border-2 border-dashed border-[#444] hover:border-[#10b981] rounded-xl p-8 bg-[#1e1e1e] relative group"
               >
                 <input
                   type="file"
@@ -384,7 +352,7 @@
                 />
                 <p
                   id="fileNamePreview"
-                  class="text-sm font-medium text-gray-300 group-hover:text-white"
+                  class="text-sm font-medium text-gray-300"
                 >
                   Click to choose or Drag & Drop supplier_data.csv file here
                 </p>
@@ -430,7 +398,6 @@
         }
       }
 
-      // CSV FILE UPLOAD PIPELINE CONNECTED
       document
         .getElementById("csvFileInput")
         .addEventListener("change", function (e) {
@@ -440,6 +407,7 @@
           }
         });
 
+      // 🛠️ স্ট্যান্ডার্ড এবং বুলেটপ্রুফ FormData আপলোড পাইপলাইন
       document
         .getElementById("uploadForm")
         .addEventListener("submit", async function (e) {
@@ -450,17 +418,18 @@
 
           if (fileInput.files.length === 0) return;
 
+          const file = fileInput.files[0];
           const formData = new FormData();
-          formData.append("file", fileInput.files[0]);
+          formData.append("file", file); // 'file' কি (key) দিয়ে ফাইলটি বাইন্ড করা হলো
 
           btn.innerText = "Processing file...";
           statusText.className = "text-xs font-semibold mt-2 text-yellow-400";
-          statusText.innerText = "Uploading to Render server, please wait...";
+          statusText.innerText = "Uploading via FormData to Render server...";
 
           try {
             const response = await fetch(`${renderAPIUrl}/api/upload_csv`, {
               method: "POST",
-              body: formData,
+              body: formData, // ব্রাউজার নিজে থেকেই সঠিক Multipart Boundary এবং হেডার সেট করে নেবে
             });
             const result = await response.json();
 
@@ -469,9 +438,8 @@
                 "text-xs font-semibold mt-2 text-green-400";
               statusText.innerText = `${result.message} Loaded ${result.total_records} rows.`;
 
-              // 🛠️ DYNAMICALLY POPULATING DROP-DOWN METRICS
               const customGroup = document.getElementById("custom-optgroup");
-              customGroup.innerHTML = ""; // reset
+              customGroup.innerHTML = "";
 
               result.new_categories.forEach((cat) => {
                 const option = document.createElement("option");
@@ -481,9 +449,7 @@
               });
 
               customGroup.classList.remove("hidden");
-              alert(
-                "Success! Custom categories injected into Supplier Search Tab.",
-              );
+              alert("Success! Custom CSV categories injected dynamically.");
               switchTab("supplier-scoring");
             } else {
               statusText.className = "text-xs font-semibold mt-2 text-red-400";
@@ -491,7 +457,8 @@
             }
           } catch (err) {
             statusText.className = "text-xs font-semibold mt-2 text-red-400";
-            statusText.innerText = "Connection failed to upload file.";
+            statusText.innerText =
+              "Connection failed to upload file. Render server might be updating.";
           }
           btn.innerText = "Upload & Parse Dataset";
         });

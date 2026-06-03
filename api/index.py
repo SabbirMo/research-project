@@ -6,9 +6,10 @@ import joblib
 import os
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})
+# CORS পলিসি আরও শক্তিশালী করা হলো যাতে ফাইল আপলোডে ব্রাউজার ব্লক না করে
+CORS(app, resources={r"/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}})
 
-# এআই মডেল পাথ সেটাপ
+# এআইモデル পাথ সেটাপ
 model_name = 'trained_supplier_ai.pkl'
 model_path = None
 possible_paths = [
@@ -32,10 +33,9 @@ try:
 except Exception as e:
     print(f"❌ Model load error: {e}")
 
-# গ্লোবাল ভেরিয়েবল যেখানে আপলোড করা CSV এর ডাটা সাময়িকভাবে জমা থাকবে
+# গ্লোবাল ডাটাফ্রেম ভেরিয়েবল
 uploaded_suppliers_df = None
 
-# ১৮টি অরিজিনাল ক্যাটাগরি কনফিগারেশন
 categories_config = {
     'Laptop': (40000, 150000, 1, 10), 'Phone': (15000, 130000, 1, 20),
     'Skincare': (300, 5000, 20, 200), 'Furniture': (5000, 80000, 1, 5),
@@ -48,35 +48,34 @@ categories_config = {
     'Gardening': (100, 5000, 10, 100), 'Music': (2000, 150000, 1, 5)
 }
 
-# 🛠️ ১. নতুন API: CSV ফাইল আপলোড এবং প্রসেস করা
-@app.route('/api/upload_csv', methods=['POST'])
+# 🛠️ স্ট্যান্ডার্ড মাল্টিপার্ট ফর্ম ফাইল আপলোড এন্ডপয়েন্ট (With OPTIONS Preflight handled)
+@app.route('/api/upload_csv', methods=['POST', 'OPTIONS'])
 def upload_csv():
     global uploaded_suppliers_df
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+        
     try:
         if 'file' not in request.files:
-            return jsonify({'error': 'No file part'}), 400
-        
+            return jsonify({'error': 'No file part found in the request. Make sure you upload a valid file.'}), 400
+            
         file = request.files['file']
         if file.filename == '':
             return jsonify({'error': 'No selected file'}), 400
             
         if file and file.filename.endswith('.csv'):
-            # CSV ফাইলটি রিড করা
             df = pd.read_csv(file)
             
-            # প্রয়োজনীয় কলামগুলো চেক করা
+            # কলামের নামগুলো চেক করা হচ্ছে
             required_cols = ['supplier_name', 'category', 'price', 'quality', 'reliability', 'moq', 'delivery_time', 'reviews']
             if not all(col in df.columns for col in required_cols):
-                return jsonify({'error': f'CSV must contain headers: {", ".join(required_cols)}'}), 400
+                return jsonify({'error': f'CSV columns mismatch. Required: {", ".join(required_cols)}'}), 400
             
-            # মেমরিতে সেভ করা
             uploaded_suppliers_df = df.copy()
-            
-            # ইউনিক ক্যাটাগরিগুলো বের করা ফ্রন্টএন্ডে পাঠানোর জন্য
             unique_categories = df['category'].dropna().unique().tolist()
             
             return jsonify({
-                'message': '✅ CSV Uploaded & Processed successfully!',
+                'message': '✅ CSV Dataset Uploaded successfully!',
                 'new_categories': unique_categories,
                 'total_records': len(df)
             })
@@ -85,7 +84,7 @@ def upload_csv():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ২. মেইন সার্চ API (আপডেটেড: এটি এখন আপলোড করা ডাটাও চেক করবে)
+# মেইন সার্চ API
 @app.route('/api/search_suppliers', methods=['POST', 'OPTIONS'])
 def search_suppliers():
     global uploaded_suppliers_df
@@ -96,25 +95,16 @@ def search_suppliers():
         data = request.json
         category = data.get('category', 'Laptop')
         
-        # 🛠️ চেক করা হচ্ছে ক্যাটাগরিটি আপলোড করা CSV থেকে এসেছে কি না
         if uploaded_suppliers_df is not None and category in uploaded_suppliers_df['category'].values:
-            # আপলোড করা CSV থেকে ডাটা ফিল্টার করা
             cat_df = uploaded_suppliers_df[uploaded_suppliers_df['category'] == category].copy()
-            
-            # কলামের নাম ম্যাচ করানো মডেল ফিচারের সাথে
             features = cat_df[['price', 'quality', 'reliability', 'moq', 'delivery_time', 'reviews']]
             predictions = model.predict(features)
             cat_df['ai_score'] = [min(max(round(score, 2), 0), 100) for score in predictions]
-            
-            # রিনেম করে ক্লায়েন্ট ফরম্যাটে নেওয়া
             cat_df = cat_df.rename(columns={'supplier_name': 'name'})
             df = cat_df.sort_values(by='ai_score', ascending=False).reset_index(drop=True)
-            
         else:
-            # যদি কাস্টম না হয়, তবে আমাদের আগের ১৮টি রেডিমেড জেনারেটর লজিক চলবে
             if category not in categories_config:
                 category = 'Laptop'
-                
             min_p, max_p, min_m, max_m = categories_config[category]
             random.seed(category)
             
@@ -130,14 +120,12 @@ def search_suppliers():
                     'reviews': round(random.uniform(3.0, 5.0), 1)
                 })
             random.seed()
-            
             df = pd.DataFrame(suppliers)
             features = df[['price', 'quality', 'reliability', 'moq', 'delivery_time', 'reviews']]
             predictions = model.predict(features)
             df['ai_score'] = [min(max(round(score, 2), 0), 100) for score in predictions]
             df = df.sort_values(by='ai_score', ascending=False).reset_index(drop=True)
         
-        # রেসপন্স ডাটা মেকিং (আগের মতোই)
         best_supplier = df.iloc[0]
         result_list = []
         for index, row in df.iterrows():
@@ -151,18 +139,14 @@ def search_suppliers():
             else:
                 supplier_data['status'] = 'Not Recommended'
                 reasons = []
-                if row['price'] > best_supplier['price']:
-                    reasons.append("Higher Price")
-                if row['quality'] < best_supplier['quality']:
-                    reasons.append("Lower Quality")
-                if row['delivery_time'] > best_supplier['delivery_time']:
-                    reasons.append("Slower Delivery")
+                if row['price'] > best_supplier['price']: reasons.append("Higher Price")
+                if row['quality'] < best_supplier['quality']: reasons.append("Lower Quality")
+                if row['delivery_time'] > best_supplier['delivery_time']: reasons.append("Slower Delivery")
                 supplier_data['reason'] = ", ".join(reasons) if reasons else "Overall score is lower"
                 
             result_list.append(supplier_data)
 
         return jsonify({'suppliers': result_list, 'category': category})
-        
     except Exception as e:
         return jsonify({'error': str(e)})
 
