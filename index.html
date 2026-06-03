@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Supplier Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="p-6">
+    <div class="max-w-7xl mx-auto space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="card-bg p-6">
+          <h2 class="text-lg font-semibold border-b border-[#333] pb-4 mb-5">
+            Supplier Search
+          </h2>
+
+          <form id="searchForm" class="space-y-5">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs text-gray-400 mb-2">Category</label>
+                <select
+                  id="category"
+                  class="input-field w-full rounded-lg px-3 py-2.5 text-sm appearance-none cursor-pointer"
+                >
+                  <option value="Laptop">Laptop</option>
+                  <option value="Phone">Phone</option>
+                  <option value="Skincare">Skincare</option>
+                  <option value="Furniture">Furniture</option>
+                  <option value="Appliances">Appliances</option>
+                  <option value="Fashion">Fashion</option>
+                  <option value="Grocery">Grocery</option>
+                  <option value="Sports">Sports</option>
+                  <option value="Auto">Auto</option>
+                  <option value="Stationery">Stationery</option>
+                  <option value="Toys">Toys</option>
+                  <option value="Industrial">Industrial</option>
+                  <option value="Pets">Pets</option>
+                  <option value="Kitchen">Kitchen</option>
+                  <option value="Solar">Solar</option>
+                  <option value="Camera">Camera</option>
+                  <option value="Gardening">Gardening</option>
+                  <option value="Music">Music</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs text-gray-400 mb-2"
+                  >Price Range (BDT)</label
+                >
+                <input
+                  type="text"
+                  id="priceLimit"
+                  class="input-field w-full rounded-lg px-3 py-2.5 text-sm bg-[#222] text-gray-400"
+                  disabled
+                  value="40k - 150k"
+                />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <button
+                type="submit"
+                id="searchBtn"
+                class="btn-green w-full font-semibold py-3 rounded-lg text-sm flex items-center justify-center gap-2"
+              >
+                Find Best Supplier
+              </button>
+              <button
+                type="button"
+                class="btn-clear w-full font-semibold py-3 rounded-lg text-sm"
+                onclick="location.reload()"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card-bg p-6">
+          <h2 class="text-lg font-semibold border-b border-[#333] pb-4 mb-5">
+            Top Scorer Performance (AI)
+          </h2>
+
+          <div class="space-y-6">
+            <div>
+              <div class="flex justify-between text-sm mb-2">
+                <span class="font-semibold">Quality Match</span>
+                <span id="qualityText" class="text-gray-400">0.0/10</span>
+              </div>
+              <div class="w-full bg-[#333] rounded-full h-2">
+                <div
+                  id="qualityBar"
+                  class="bg-green-500 h-2 rounded-full bar-anim"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-2">
+                <span class="font-semibold">Supplier Reliability</span>
+                <span id="reliabilityText" class="text-gray-400">0%</span>
+              </div>
+              <div class="w-full bg-[#333] rounded-full h-2">
+                <div
+                  id="reliabilityBar"
+                  class="bg-yellow-500 h-2 rounded-full bar-anim"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+            <div>
+              <div class="flex justify-between text-sm mb-2">
+                <span class="font-semibold">AI Confidence Score</span>
+                <span id="aiConfidenceText" class="text-gray-400">0%</span>
+              </div>
+              <div class="w-full bg-[#333] rounded-full h-2">
+                <div
+                  id="aiConfidenceBar"
+                  class="bg-blue-500 h-2 rounded-full bar-anim"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="card-bg p-5">
+          <p class="text-gray-400 text-sm mb-1">Total Analyzed</p>
+          <h3 class="text-3xl font-bold" id="statCount">0</h3>
+        </div>
+        <div class="card-bg p-5">
+          <p class="text-gray-400 text-sm mb-1">Avg AI Score</p>
+          <h3 class="text-3xl font-bold" id="statAvg">0.0</h3>
+        </div>
+        <div class="card-bg p-5">
+          <p class="text-gray-400 text-sm mb-1">Top Scorer</p>
+          <h3 class="text-2xl font-bold text-green-400" id="statTop">--</h3>
+        </div>
+        <div class="card-bg p-5">
+          <p class="text-gray-400 text-sm mb-1">Needs Review</p>
+          <h3 class="text-3xl font-bold text-red-400" id="statPoor">0</h3>
+        </div>
+      </div>
+
+      <div>
+        <h2
+          class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4"
+        >
+          All Suppliers - AI Scored
+        </h2>
+
+        <div class="card-bg overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr>
+                <th class="w-16">Rank</th>
+                <th>Supplier</th>
+                <th>Category</th>
+                <th>Quality</th>
+                <th>Reliability</th>
+                <th>Delivery</th>
+                <th>Price (BDT)</th>
+                <th>Score</th>
+                <th>Status</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <tr>
+                <td colspan="10" class="text-center py-10 text-gray-500">
+                  Select a category and click "Find Best Supplier"
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const priceRanges = {
+        Laptop: "40k - 150k",
+        Phone: "15k - 130k",
+        Skincare: "300 - 5k",
+        Furniture: "5k - 80k",
+        Appliances: "10k - 100k",
+        Fashion: "200 - 5k",
+        Grocery: "50 - 2k",
+        Sports: "500 - 15k",
+        Auto: "1k - 50k",
+        Stationery: "5 - 500",
+        Toys: "100 - 10k",
+        Industrial: "5k - 200k",
+        Pets: "200 - 8k",
+        Kitchen: "500 - 20k",
+        Solar: "20k - 500k",
+        Camera: "20k - 250k",
+        Gardening: "100 - 5k",
+        Music: "2k - 150k",
+      };
+
+      document
+        .getElementById("category")
+        .addEventListener("change", function () {
+          const selectedCat = this.value;
+          document.getElementById("priceLimit").value =
+            priceRanges[selectedCat] + " BDT";
+        });
+
+      document
+        .getElementById("searchForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const btn = document.getElementById("searchBtn");
+          const tableBody = document.getElementById("tableBody");
+          const category = document.getElementById("category").value;
+
+          btn.innerHTML =
+            '<svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Searching...';
+
+          try {
+            const response = await fetch(
+              "http://127.0.0.1:5000/search_suppliers",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ category: category }),
+              },
+            );
+
+            const result = await response.json();
+
+            if (result.suppliers) {
+              tableBody.innerHTML = "";
+              let totalScore = 0;
+              let poorCount = 0;
+
+              result.suppliers.forEach((supplier) => {
+                totalScore += supplier.ai_score;
+
+                let statusClass = "";
+                let statusText = "";
+
+                if (supplier.rank <= 3) {
+                  statusClass = "status-good";
+                  statusText = "Good";
+                } else if (supplier.rank <= 5) {
+                  statusClass = "status-fair";
+                  statusText = "Fair";
+                } else {
+                  statusClass = "status-poor";
+                  statusText = "Poor";
+                  poorCount++;
+                }
+
+                const avatarColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
+                const initial = supplier.name.charAt(
+                  supplier.name.indexOf("_") + 1,
+                );
+
+                const row = `
+                            <tr>
+                                <td class="font-semibold text-gray-400">0${supplier.rank}</td>
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background-color: ${avatarColor}">
+                                            ${initial}
+                                        </div>
+                                        <span class="font-medium">${supplier.name}</span>
+                                    </div>
+                                </td>
+                                <td class="text-gray-400">${category}</td>
+                                <td><span class="text-gray-500 mr-1">•</span> ${supplier.quality}</td>
+                                <td>${supplier.reliability}%</td>
+                                <td>${supplier.delivery_time}d</td>
+                                <td>৳${supplier.price.toLocaleString()}</td>
+                                <td><span class="font-bold text-[#10b981]">${supplier.ai_score}</span></td>
+                                <td><span class="text-[11px] px-3 py-1 rounded-full font-semibold ${statusClass}">${statusText}</span></td>
+                                <td class="text-xs text-gray-500 max-w-[200px] truncate" title="${supplier.reason}">${supplier.reason}</td>
+                            </tr>
+                        `;
+                tableBody.innerHTML += row;
+              });
+
+              document.getElementById("statCount").innerText =
+                result.suppliers.length;
+              document.getElementById("statAvg").innerText = (
+                totalScore / result.suppliers.length
+              ).toFixed(1);
+              document.getElementById("statTop").innerText =
+                result.suppliers[0].name;
+              document.getElementById("statPoor").innerText = poorCount;
+
+              const topSupplier = result.suppliers[0];
+
+              document.getElementById("qualityText").innerText =
+                `${topSupplier.quality}/10`;
+              document.getElementById("qualityBar").style.width =
+                `${(topSupplier.quality / 10) * 100}%`;
+
+              document.getElementById("reliabilityText").innerText =
+                `${topSupplier.reliability}%`;
+              document.getElementById("reliabilityBar").style.width =
+                `${topSupplier.reliability}%`;
+
+              document.getElementById("aiConfidenceText").innerText =
+                `${topSupplier.ai_score}%`;
+              document.getElementById("aiConfidenceBar").style.width =
+                `${topSupplier.ai_score}%`;
+            } else {
+              tableBody.innerHTML = `<tr><td colspan="10" class="text-red-400 text-center py-10">Error: ${result.error}</td></tr>`;
+            }
+          } catch (error) {
+            tableBody.innerHTML = `<tr><td colspan="10" class="text-red-400 text-center py-10">Connection failed! Make sure Python server.py is running.</td></tr>`;
+          }
+
+          btn.innerHTML = "Find Best Supplier";
+        });
+    </script>
+  </body>
+</html>
