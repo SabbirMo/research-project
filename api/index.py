@@ -8,17 +8,34 @@ import os
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-# Model path setup for Render/Vercel environments
-current_dir = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(current_dir, 'trained_supplier_ai.pkl')
+# 🛠️ গ্যারান্টেড পাথ সলিউশন (Render এর জন্য)
+# এটি প্রথমে কারেন্ট ফোল্ডার, তারপর তার প্যারেন্ট ফোল্ডার সব জায়গায় মডেল ফাইলটি খুঁজবে
+model_name = 'trained_supplier_ai.pkl'
+model_path = None
+
+possible_paths = [
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), model_name), # api/ ফোল্ডারের ভেতর
+    os.path.join(os.getcwd(), model_name),                              # রুট ফোল্ডারে
+    os.path.join(os.getcwd(), 'api', model_name)                        # রুট থেকে api ফোল্ডারে
+]
+
+for path in possible_paths:
+    if os.path.exists(path):
+        model_path = path
+        break
 
 try:
-    model = joblib.load(model_path)
-    print("✅ AI Model Loaded Successfully!")
+    if model_path:
+        model = joblib.load(model_path)
+        print(f"✅ AI Model Loaded Successfully from: {model_path}")
+    else:
+        # যদি কোনো পাধেই না পায়, তবে ডিরেক্ট লোড করার ট্রাই করবে
+        model = joblib.load(model_name)
+        print("✅ AI Model Loaded Successfully via default path!")
 except Exception as e:
     print(f"❌ Model load error: {e}")
 
-# 18 original categories with their specific ranges
+# ১৮টি অরিজিনাল ক্যাটাগরি কনফিগারেশন
 categories_config = {
     'Laptop': (40000, 150000, 1, 10),
     'Phone': (15000, 130000, 1, 20),
@@ -54,10 +71,10 @@ def search_suppliers():
             
         min_p, max_p, min_m, max_m = categories_config[category]
         
-        # ⚠️ LOCK DATA: Category wise data stay consistent on clicks
+        # ডাটা লক করা হলো যাতে বারবার ক্লিকে চেঞ্জ না হয়
         random.seed(category)
         
-        # ⚠️ BIGGER LIST: Generating 30 suppliers for a rich table list
+        # একসাথে ৩০ জন সাপ্লায়ার জেনারেট হবে
         suppliers = []
         for i in range(1, 31): 
             price = random.randint(min_p, max_p)
@@ -77,17 +94,16 @@ def search_suppliers():
                 'reviews': reviews
             })
             
-        # Reset seed right after generation to maintain normal behavior elsewhere
         random.seed()
         
         df = pd.DataFrame(suppliers)
         features = df[['price', 'quality', 'reliability', 'moq', 'delivery_time', 'reviews']]
         
-        # AI Model Scoring
+        # AI Model দিয়ে স্কোর প্রেডিক্ট করা
         predictions = model.predict(features)
         df['ai_score'] = [min(max(round(score, 2), 0), 100) for score in predictions]
         
-        # Sorting by AI Score (Rank 1 is the absolute best match)
+        # AI স্কোর অনুযায়ী বড় থেকে ছোট সাজানো
         df = df.sort_values(by='ai_score', ascending=False).reset_index(drop=True)
         
         best_supplier = df.iloc[0]
@@ -98,7 +114,6 @@ def search_suppliers():
             supplier_data = row.to_dict()
             supplier_data['rank'] = rank
             
-            # Recommendation status logic
             if rank <= 3:
                 supplier_data['status'] = 'Recommended'
                 supplier_data['reason'] = 'Top AI Match (Best Balance)'
