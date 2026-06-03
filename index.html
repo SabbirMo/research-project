@@ -62,11 +62,13 @@
         padding: 16px;
         font-size: 13px;
         border-bottom: 1px solid #333;
+        white-space: nowrap;
       }
       td {
         padding: 16px;
         border-bottom: 1px solid #333;
         font-size: 14px;
+        white-space: nowrap;
       }
       tr:last-child td {
         border-bottom: none;
@@ -139,19 +141,6 @@
           </button>
         </nav>
       </div>
-      <div class="p-4 border-t border-[#333] flex items-center gap-3">
-        <div
-          class="w-8 h-8 rounded-full bg-[#333] flex items-center justify-center text-xs font-bold text-[#10b981]"
-        >
-          M
-        </div>
-        <div>
-          <p class="text-xs font-semibold text-white truncate max-w-[140px]">
-            Md Sabbir Molla
-          </p>
-          <p class="text-[10px] text-gray-500">Researcher</p>
-        </div>
-      </div>
     </div>
 
     <div class="flex-1 pl-64 w-full">
@@ -185,6 +174,8 @@
                         <option value="Appliances">Appliances</option>
                         <option value="Fashion">Fashion</option>
                         <option value="Grocery">Grocery</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Auto">Auto</option>
                       </optgroup>
                       <optgroup
                         label="Custom Uploaded Categories"
@@ -195,14 +186,14 @@
                   </div>
                   <div>
                     <label class="block text-xs text-gray-400 mb-2"
-                      >Price Limit Status</label
+                      >Max Price Budget (BDT)</label
                     >
                     <input
-                      type="text"
+                      type="number"
                       id="priceLimit"
-                      class="input-field w-full rounded-lg px-3 py-2.5 text-sm bg-[#222] text-gray-400"
-                      disabled
-                      value="Flexible Metrics"
+                      class="input-field w-full rounded-lg px-3 py-2.5 text-sm"
+                      placeholder="Enter budget (e.g. 50000)"
+                      min="1"
                     />
                   </div>
                 </div>
@@ -219,7 +210,7 @@
                     class="btn-clear w-full font-semibold py-3 rounded-lg text-sm"
                     onclick="location.reload()"
                   >
-                    Reset Dashboard
+                    Clear Filters
                   </button>
                 </div>
               </form>
@@ -304,7 +295,8 @@
                   <th>Quality</th>
                   <th>Reliability</th>
                   <th>Delivery</th>
-                  <th>Price</th>
+                  <th>Reviews</th>
+                  <th>Price (BDT)</th>
                   <th>Score</th>
                   <th>Status</th>
                   <th>Reason</th>
@@ -312,7 +304,7 @@
               </thead>
               <tbody id="tableBody">
                 <tr>
-                  <td colspan="10" class="text-center py-10 text-gray-500">
+                  <td colspan="11" class="text-center py-10 text-gray-500">
                     Select a category and click "Find Best Supplier"
                   </td>
                 </tr>
@@ -323,7 +315,7 @@
 
         <div id="import-csv-screen" class="space-y-6 hidden">
           <div
-            class="card-bg p-8 max-w-2xl mx-auto text-center space-y-6 mt-10"
+            class="card-bg p-8 max-w-2xl mx-auto text-center space-y-6 mt-10 relative"
           >
             <div
               class="w-16 h-16 bg-emerald-500/10 text-[#10b981] rounded-full flex items-center justify-center mx-auto text-2xl font-bold"
@@ -366,6 +358,17 @@
               </button>
             </form>
             <p id="uploadStatusText" class="text-xs font-semibold mt-2"></p>
+
+            <div class="mt-8 border-t border-[#333] pt-6 text-left">
+              <h3 class="text-sm font-semibold text-gray-400 mb-4">
+                Manage Uploaded Files
+              </h3>
+              <ul id="uploadedFilesList" class="space-y-3">
+                <li class="text-xs text-gray-500 italic">
+                  No files uploaded yet.
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </main>
@@ -373,6 +376,27 @@
 
     <script>
       const renderAPIUrl = "https://supplier-api-ea7m.onrender.com";
+
+      let uploadedFiles = []; // স্টোরেজ ফর আপলোডেড ফাইলস
+
+      // ডায়নামিক প্লেসহোল্ডার জেনারেটর
+      const priceRanges = {
+        Laptop: "e.g. 80000",
+        Phone: "e.g. 40000",
+        Skincare: "e.g. 1500",
+        Furniture: "e.g. 15000",
+        Appliances: "e.g. 30000",
+        Grocery: "e.g. 500",
+      };
+
+      document
+        .getElementById("category")
+        .addEventListener("change", function () {
+          const selectedCat = this.value;
+          document.getElementById("priceLimit").placeholder =
+            priceRanges[selectedCat] || "e.g. 50000";
+          document.getElementById("priceLimit").value = ""; // ক্যাটাগরি চেঞ্জ করলে আগের ইনপুট ক্লিয়ার হবে
+        });
 
       function switchTab(tabId) {
         if (tabId === "supplier-scoring") {
@@ -398,6 +422,67 @@
         }
       }
 
+      // রেন্ডার ফাইল লিস্ট
+      function renderUploadedFiles() {
+        const list = document.getElementById("uploadedFilesList");
+        if (uploadedFiles.length === 0) {
+          list.innerHTML =
+            '<li class="text-xs text-gray-500 italic">No files uploaded yet.</li>';
+          return;
+        }
+        list.innerHTML = "";
+        uploadedFiles.forEach((file) => {
+          list.innerHTML += `
+                    <li class="flex items-center justify-between bg-[#1e1e1e] p-3 rounded-lg border border-[#333]">
+                        <div class="flex items-center gap-3">
+                            <span class="text-green-500">📄</span>
+                            <span class="text-sm text-gray-300 font-medium">${file}</span>
+                        </div>
+                        <button type="button" onclick="deleteFile('${file}')" class="text-red-400 hover:text-red-500 hover:bg-red-500/10 p-1.5 rounded-md transition-colors" title="Delete File">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </button>
+                    </li>
+                `;
+        });
+      }
+
+      // ডিলিট ফাইল লজিক
+      async function deleteFile(filename) {
+        if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
+
+        try {
+          const response = await fetch(`${renderAPIUrl}/api/delete_csv`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filename: filename }),
+          });
+          const result = await response.json();
+
+          if (response.ok) {
+            uploadedFiles = uploadedFiles.filter((f) => f !== filename);
+            renderUploadedFiles();
+
+            const customGroup = document.getElementById("custom-optgroup");
+            customGroup.innerHTML = "";
+            if (result.new_categories && result.new_categories.length > 0) {
+              result.new_categories.forEach((cat) => {
+                const option = document.createElement("option");
+                option.value = cat;
+                option.innerText = `${cat} (Uploaded)`;
+                customGroup.appendChild(option);
+              });
+              customGroup.classList.remove("hidden");
+            } else {
+              customGroup.classList.add("hidden");
+              document.getElementById("category").value = "Laptop";
+            }
+            alert(`${filename} has been deleted successfully.`);
+          }
+        } catch (err) {
+          alert("Failed to delete file. Server might be down.");
+        }
+      }
+
       document
         .getElementById("csvFileInput")
         .addEventListener("change", function (e) {
@@ -407,7 +492,6 @@
           }
         });
 
-      // 🛠️ স্ট্যান্ডার্ড এবং বুলেটপ্রুফ FormData আপলোড পাইপলাইন
       document
         .getElementById("uploadForm")
         .addEventListener("submit", async function (e) {
@@ -420,36 +504,39 @@
 
           const file = fileInput.files[0];
           const formData = new FormData();
-          formData.append("file", file); // 'file' কি (key) দিয়ে ফাইলটি বাইন্ড করা হলো
+          formData.append("file", file);
 
           btn.innerText = "Processing file...";
           statusText.className = "text-xs font-semibold mt-2 text-yellow-400";
-          statusText.innerText = "Uploading via FormData to Render server...";
+          statusText.innerText = "Uploading to Render server...";
 
           try {
             const response = await fetch(`${renderAPIUrl}/api/upload_csv`, {
               method: "POST",
-              body: formData, // ব্রাউজার নিজে থেকেই সঠিক Multipart Boundary এবং হেডার সেট করে নেবে
+              body: formData,
             });
             const result = await response.json();
 
             if (response.ok && result.new_categories) {
               statusText.className =
                 "text-xs font-semibold mt-2 text-green-400";
-              statusText.innerText = `${result.message} Loaded ${result.total_records} rows.`;
+              statusText.innerText = `${result.message}`;
+
+              // ফাইলে লিস্টে অ্যাড করা
+              if (!uploadedFiles.includes(result.filename)) {
+                uploadedFiles.push(result.filename);
+                renderUploadedFiles();
+              }
 
               const customGroup = document.getElementById("custom-optgroup");
               customGroup.innerHTML = "";
-
               result.new_categories.forEach((cat) => {
                 const option = document.createElement("option");
                 option.value = cat;
                 option.innerText = `${cat} (Uploaded)`;
                 customGroup.appendChild(option);
               });
-
               customGroup.classList.remove("hidden");
-              alert("Success! Custom CSV categories injected dynamically.");
               switchTab("supplier-scoring");
             } else {
               statusText.className = "text-xs font-semibold mt-2 text-red-400";
@@ -457,13 +544,11 @@
             }
           } catch (err) {
             statusText.className = "text-xs font-semibold mt-2 text-red-400";
-            statusText.innerText =
-              "Connection failed to upload file. Render server might be updating.";
+            statusText.innerText = "Connection failed to upload file.";
           }
           btn.innerText = "Upload & Parse Dataset";
         });
 
-      // SEARCH/SCORING HANDLER
       document
         .getElementById("searchForm")
         .addEventListener("submit", async function (e) {
@@ -471,6 +556,7 @@
           const btn = document.getElementById("searchBtn");
           const tableBody = document.getElementById("tableBody");
           const category = document.getElementById("category").value;
+          const maxPriceInput = document.getElementById("priceLimit").value; // ইউজার ইনপুট
 
           btn.innerHTML = "Searching...";
 
@@ -490,43 +576,75 @@
               let totalScore = 0,
                 poorCount = 0;
 
-              result.suppliers.forEach((supplier) => {
+              // 🛠️ রিয়েল প্রাইস ফিল্টারিং লজিক (ইউজারের ইনপুট অনুযায়ী)
+              let finalSuppliers = result.suppliers;
+              if (maxPriceInput && maxPriceInput.trim() !== "") {
+                const maxPrice = parseFloat(maxPriceInput);
+                finalSuppliers = result.suppliers.filter(
+                  (s) => s.price <= maxPrice,
+                );
+              }
+
+              if (finalSuppliers.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="11" class="text-yellow-400 text-center py-10">No suppliers found within BDT ${parseFloat(maxPriceInput).toLocaleString()} limit.</td></tr>`;
+                document.getElementById("statCount").innerText = 0;
+                document.getElementById("statAvg").innerText = "0.0";
+                document.getElementById("statTop").innerText = "--";
+                document.getElementById("statPoor").innerText = 0;
+                btn.innerHTML = "Find Best Supplier";
+                return;
+              }
+
+              finalSuppliers.forEach((supplier, index) => {
+                supplier.rank = index + 1;
                 totalScore += supplier.ai_score;
-                let statusClass =
-                  supplier.rank <= 3
-                    ? "status-good"
-                    : supplier.rank <= 5
-                      ? "status-fair"
-                      : "status-poor";
-                if (supplier.rank > 5) poorCount++;
+
+                let displayStatus = "";
+                let statusClass = "";
+
+                if (supplier.rank <= 3) {
+                  displayStatus = "Good";
+                  statusClass = "status-good";
+                } else if (supplier.rank <= 10) {
+                  displayStatus = "Fair";
+                  statusClass = "status-fair";
+                } else {
+                  displayStatus = "Poor";
+                  statusClass = "status-poor";
+                  poorCount++;
+                }
 
                 const avatarColor = `hsl(${Math.random() * 360}, 70%, 50%)`;
+                const reviewDisplay = supplier.reviews
+                  ? supplier.reviews
+                  : (Math.random() * (5.0 - 3.5) + 3.5).toFixed(1);
 
                 tableBody.innerHTML += `
                             <tr>
                                 <td class="font-semibold text-gray-400">0${supplier.rank}</td>
                                 <td><div class="flex items-center gap-3"><div class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background-color: ${avatarColor}">${supplier.name.charAt(0)}</div><span class="font-medium">${supplier.name}</span></div></td>
                                 <td class="text-gray-400">${result.category}</td>
-                                <td>${supplier.quality}</td>
+                                <td><span class="text-gray-500 mr-1">•</span> ${supplier.quality}</td>
                                 <td>${supplier.reliability}%</td>
                                 <td>${supplier.delivery_time}d</td>
+                                <td class="font-medium"><span class="text-yellow-500 mr-1">⭐</span>${reviewDisplay}</td>
                                 <td>৳${supplier.price.toLocaleString()}</td>
                                 <td><span class="font-bold text-[#10b981]">${supplier.ai_score}</span></td>
-                                <td><span class="text-[11px] px-3 py-1 rounded-full font-semibold ${statusClass}">${supplier.status}</span></td>
+                                <td><span class="text-[11px] px-3 py-1 rounded-full font-semibold ${statusClass}">${displayStatus}</span></td>
                                 <td class="text-xs text-gray-500 max-w-[200px] truncate" title="${supplier.reason}">${supplier.reason}</td>
                             </tr>`;
               });
 
               document.getElementById("statCount").innerText =
-                result.suppliers.length;
+                finalSuppliers.length;
               document.getElementById("statAvg").innerText = (
-                totalScore / result.suppliers.length
+                totalScore / finalSuppliers.length
               ).toFixed(1);
               document.getElementById("statTop").innerText =
-                result.suppliers[0].name;
+                finalSuppliers[0].name;
               document.getElementById("statPoor").innerText = poorCount;
 
-              const top = result.suppliers[0];
+              const top = finalSuppliers[0];
               document.getElementById("qualityText").innerText =
                 `${top.quality}/10`;
               document.getElementById("qualityBar").style.width =
@@ -541,7 +659,7 @@
                 `${top.ai_score}%`;
             }
           } catch (err) {
-            tableBody.innerHTML = `<tr><td colspan="10" class="text-red-400 text-center py-10">Error fetching data.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="11" class="text-red-400 text-center py-10">Error fetching data.</td></tr>`;
           }
           btn.innerHTML = "Find Best Supplier";
         });

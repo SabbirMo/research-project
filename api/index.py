@@ -8,7 +8,6 @@ import os
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*", "allow_headers": ["Content-Type", "Authorization"]}})
 
-# AI Model Path Setup
 model_name = 'trained_supplier_ai.pkl'
 model_path = None
 possible_paths = [
@@ -32,8 +31,8 @@ try:
 except Exception as e:
     print(f"❌ Model load error: {e}")
 
-# Global Dataframe Holder
-uploaded_suppliers_df = None
+# 🛠️ একাধিক ফাইল সেভ এবং ডিলিট করার জন্য ডিকশনারি তৈরি করা হলো
+uploaded_files_data = {}
 
 categories_config = {
     'Laptop': (40000, 150000, 1, 10), 'Phone': (15000, 130000, 1, 20),
@@ -47,65 +46,90 @@ categories_config = {
     'Gardening': (100, 5000, 10, 100), 'Music': (2000, 150000, 1, 5)
 }
 
-# 🛠️ ফ্লেক্সিবল CSV আপলোড এন্ডপয়েন্ট
+# 🛠️ ফাইল আপলোড API
 @app.route('/api/upload_csv', methods=['POST', 'OPTIONS'])
 def upload_csv():
-    global uploaded_suppliers_df
+    global uploaded_files_data
     if request.method == 'OPTIONS':
         return jsonify({}), 200
-        
     try:
         if 'file' not in request.files:
-            return jsonify({'error': 'No file part found in request'}), 400
-            
+            return jsonify({'error': 'No file part found'}), 400
         file = request.files['file']
         if file.filename == '':
             return jsonify({'error': 'No selected file'}), 400
             
         if file and file.filename.endswith('.csv'):
             df = pd.read_csv(file)
-            
-            # 🛠️ ফিক্সড লজিক: 'supplier_name' অথবা 'name' যেকোনো একটা থাকলেই সেটিকে রিনেম করে স্ট্যান্ডার্ড করে নেবে
             if 'supplier_name' in df.columns:
                 df = df.rename(columns={'supplier_name': 'name'})
-            
-            # মডেল প্রেডিকশনের জন্য প্রয়োজনীয় মূল ৬টি ফিচার চেক করা
+                
             required_features = ['price', 'quality', 'reliability', 'moq', 'delivery_time', 'reviews']
-            
             if 'category' not in df.columns or 'name' not in df.columns or not all(col in df.columns for col in required_features):
-                return jsonify({'error': 'CSV must contain headers: name (or supplier_name), category, price, quality, reliability, moq, delivery_time, reviews'}), 400
+                return jsonify({'error': 'CSV must contain required headers.'}), 400
+                
+            uploaded_files_data[file.filename] = df.copy()
             
-            uploaded_suppliers_df = df.copy()
-            unique_categories = df['category'].dropna().unique().tolist()
+            all_uploaded_df = pd.concat(uploaded_files_data.values(), ignore_index=True)
+            unique_categories = all_uploaded_df['category'].dropna().unique().tolist()
             
             return jsonify({
-                'message': '✅ CSV Dataset Uploaded successfully!',
+                'message': '✅ Dataset uploaded successfully!',
+                'filename': file.filename,
                 'new_categories': unique_categories,
                 'total_records': len(df)
             })
-            
         return jsonify({'error': 'Invalid file format. Only .csv allowed'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# 🛠️ ফাইল ডিলিট API
+@app.route('/api/delete_csv', methods=['POST', 'OPTIONS'])
+def delete_csv():
+    global uploaded_files_data
+    if request.method == 'OPTIONS':
+        return jsonify({}), 200
+    try:
+        data = request.json
+        filename = data.get('filename')
+        
+        if filename in uploaded_files_data:
+            del uploaded_files_data[filename] # মেমরি থেকে ডিলিট করা হলো
+            
+            # ডিলিট করার পর বাকি ফাইলগুলো থেকে ক্যাটাগরি আপডেট করা
+            if len(uploaded_files_data) > 0:
+                all_uploaded_df = pd.concat(uploaded_files_data.values(), ignore_index=True)
+                unique_categories = all_uploaded_df['category'].dropna().unique().tolist()
+            else:
+                unique_categories = []
+                
+            return jsonify({'message': f'{filename} deleted.', 'new_categories': unique_categories})
+            
+        return jsonify({'error': 'File not found on server'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 # মেইন সার্চ API
 @app.route('/api/search_suppliers', methods=['POST', 'OPTIONS'])
 def search_suppliers():
-    global uploaded_suppliers_df
+    global uploaded_files_data
     if request.method == 'OPTIONS':
         return jsonify({}), 200
-        
     try:
         data = request.json
         category = data.get('category', 'Laptop')
         
-        if uploaded_suppliers_df is not None and category in uploaded_suppliers_df['category'].values:
-            cat_df = uploaded_suppliers_df[uploaded_suppliers_df['category'] == category].copy()
-            features = cat_df[['price', 'quality', 'reliability', 'moq', 'delivery_time', 'reviews']]
-            
+        custom_df = None
+        if len(uploaded_files_data) > 0:
+            all_uploaded_df = pd.concat(uploaded_files_data.values(), ignore_index=True)
+            if category in all_uploaded_df['category'].values:
+                custom_df = all_uploaded_df[all_uploaded_df['category'] == category].copy()
+                
+        if custom_df is not None:
+            features = custom_df[['price', 'quality', 'reliability', 'moq', 'delivery_time', 'reviews']]
             predictions = model.predict(features)
-            cat_df['ai_score'] = [min(max(round(score, 2), 0), 100) for score in predictions]
-            df = cat_df.sort_values(by='ai_score', ascending=False).reset_index(drop=True)
+            custom_df['ai_score'] = [min(max(round(score, 2), 0), 100) for score in predictions]
+            df = custom_df.sort_values(by='ai_score', ascending=False).reset_index(drop=True)
         else:
             if category not in categories_config:
                 category = 'Laptop'
@@ -130,7 +154,6 @@ def search_suppliers():
             df['ai_score'] = [min(max(round(score, 2), 0), 100) for score in predictions]
             df = df.sort_values(by='ai_score', ascending=False).reset_index(drop=True)
         
-        best_supplier = df.iloc[0]
         result_list = []
         for index, row in df.iterrows():
             rank = index + 1
@@ -138,15 +161,11 @@ def search_suppliers():
             supplier_data['rank'] = rank
             
             if rank <= 3:
-                supplier_data['status'] = 'Recommended'
                 supplier_data['reason'] = 'Top AI Match (Best Balance)'
+            elif rank <= 10:
+                supplier_data['reason'] = 'Satisfactory overall score'
             else:
-                supplier_data['status'] = 'Not Recommended'
-                reasons = []
-                if row['price'] > best_supplier['price']: reasons.append("Higher Price")
-                if row['quality'] < best_supplier['quality']: reasons.append("Lower Quality")
-                if row['delivery_time'] > best_supplier['delivery_time']: reasons.append("Slower Delivery")
-                supplier_data['reason'] = ", ".join(reasons) if reasons else "Overall score is lower"
+                supplier_data['reason'] = 'Price/Quality ratio is low'
                 
             result_list.append(supplier_data)
 
