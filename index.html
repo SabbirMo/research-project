@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Supplier Dashboard</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
@@ -106,12 +107,25 @@
         background-color: #2a2a2a;
         color: white;
       }
-      .bar-anim {
-        transition: width 1s ease-in-out;
+
+      #customDropdown::-webkit-scrollbar {
+        width: 6px;
+      }
+      #customDropdown::-webkit-scrollbar-track {
+        background: #2a2a2a;
+        border-radius: 8px;
+      }
+      #customDropdown::-webkit-scrollbar-thumb {
+        background: #555;
+        border-radius: 8px;
+      }
+      #customDropdown::-webkit-scrollbar-thumb:hover {
+        background: #10b981;
       }
     </style>
   </head>
   <body class="flex min-h-screen overflow-x-hidden">
+    <!-- SIDEBAR -->
     <div class="w-64 sidebar flex flex-col justify-between fixed h-full z-10">
       <div>
         <div class="p-6 border-b border-b-[#333]">
@@ -143,8 +157,10 @@
       </div>
     </div>
 
+    <!-- CONTENT -->
     <div class="flex-1 pl-64 w-full">
       <main class="p-8 max-w-7xl mx-auto space-y-6">
+        <!-- SCORING TAB -->
         <div id="supplier-scoring-screen" class="space-y-6">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="card-bg p-6">
@@ -159,31 +175,44 @@
                     <label class="block text-xs text-gray-400 mb-2"
                       >Category</label
                     >
-                    <select
-                      id="category"
-                      class="input-field w-full rounded-lg px-3 py-2.5 text-sm cursor-pointer"
-                    >
-                      <optgroup
-                        label="Default Categories"
-                        id="default-optgroup"
+                    <div class="relative w-full">
+                      <!-- 🛠️ ফিক্সড: ডিফল্ট value="Laptop" সরিয়ে দেওয়া হয়েছে যাতে হিট টেক্সট/placeholder দেখা যায় -->
+                      <input
+                        type="text"
+                        id="categoryInput"
+                        class="input-field w-full rounded-lg px-3 py-2.5 text-sm"
+                        placeholder="Type or select a category"
+                        autocomplete="off"
+                      />
+
+                      <div
+                        id="dropdownArrow"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer"
                       >
-                        <option value="Laptop">Laptop</option>
-                        <option value="Phone">Phone</option>
-                        <option value="Skincare">Skincare</option>
-                        <option value="Furniture">Furniture</option>
-                        <option value="Appliances">Appliances</option>
-                        <option value="Fashion">Fashion</option>
-                        <option value="Grocery">Grocery</option>
-                        <option value="Sports">Sports</option>
-                        <option value="Auto">Auto</option>
-                      </optgroup>
-                      <optgroup
-                        label="Custom Uploaded Categories"
-                        id="custom-optgroup"
-                        class="hidden"
-                      ></optgroup>
-                    </select>
+                        <svg
+                          class="w-4 h-4 text-gray-400 hover:text-white transition-colors"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 9l-7 7-7-7"
+                          ></path>
+                        </svg>
+                      </div>
+
+                      <ul
+                        id="customDropdown"
+                        class="absolute z-50 w-full bg-[#2a2a2a] border border-[#444] rounded-lg mt-1 hidden max-h-56 overflow-y-auto shadow-2xl"
+                      >
+                        <!-- Options injected by JS -->
+                      </ul>
+                    </div>
                   </div>
+
                   <div>
                     <label class="block text-xs text-gray-400 mb-2"
                       >Max Price Budget (BDT)</label
@@ -192,7 +221,7 @@
                       type="number"
                       id="priceLimit"
                       class="input-field w-full rounded-lg px-3 py-2.5 text-sm"
-                      placeholder="Enter budget (e.g. 50000)"
+                      placeholder="e.g. 80000"
                       min="1"
                     />
                   </div>
@@ -285,6 +314,7 @@
             </div>
           </div>
 
+          <!-- Table -->
           <div class="card-bg overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
@@ -313,6 +343,7 @@
           </div>
         </div>
 
+        <!-- UPLOAD TAB -->
         <div id="import-csv-screen" class="space-y-6 hidden">
           <div
             class="card-bg p-8 max-w-2xl mx-auto text-center space-y-6 mt-10 relative"
@@ -376,10 +407,20 @@
 
     <script>
       const renderAPIUrl = "https://supplier-api-ea7m.onrender.com";
+      let uploadedFiles = [];
 
-      let uploadedFiles = []; // স্টোরেজ ফর আপলোডেড ফাইলস
+      let masterCategories = [
+        "Laptop",
+        "Phone",
+        "Skincare",
+        "Furniture",
+        "Appliances",
+        "Fashion",
+        "Grocery",
+        "Sports",
+        "Auto",
+      ];
 
-      // ডায়নামিক প্লেসহোল্ডার জেনারেটর
       const priceRanges = {
         Laptop: "e.g. 80000",
         Phone: "e.g. 40000",
@@ -389,14 +430,89 @@
         Grocery: "e.g. 500",
       };
 
-      document
-        .getElementById("category")
-        .addEventListener("change", function () {
-          const selectedCat = this.value;
-          document.getElementById("priceLimit").placeholder =
-            priceRanges[selectedCat] || "e.g. 50000";
-          document.getElementById("priceLimit").value = ""; // ক্যাটাগরি চেঞ্জ করলে আগের ইনপুট ক্লিয়ার হবে
+      const categoryInput = document.getElementById("categoryInput");
+      const customDropdown = document.getElementById("customDropdown");
+      const dropdownArrow = document.getElementById("dropdownArrow");
+
+      function renderDropdown(filterText = "") {
+        customDropdown.innerHTML = "";
+        let count = 0;
+
+        masterCategories.forEach((cat) => {
+          if (cat.toLowerCase().startsWith(filterText.toLowerCase())) {
+            const li = document.createElement("li");
+            li.className =
+              "px-4 py-2 cursor-pointer hover:bg-[#10b981] hover:text-white text-gray-300 text-sm transition-colors";
+            li.innerText = cat;
+            li.onclick = (e) => {
+              e.stopPropagation();
+              categoryInput.value = cat;
+              customDropdown.classList.add("hidden");
+              document.getElementById("priceLimit").placeholder =
+                priceRanges[cat] || "e.g. 50000";
+            };
+            customDropdown.appendChild(li);
+            count++;
+          }
         });
+
+        if (count === 0) {
+          const li = document.createElement("li");
+          li.className = "px-4 py-2 text-gray-500 text-sm italic";
+          li.innerText = "No match found";
+          customDropdown.appendChild(li);
+        }
+      }
+
+      categoryInput.addEventListener("input", () => {
+        renderDropdown(categoryInput.value);
+        customDropdown.classList.remove("hidden");
+        document.getElementById("priceLimit").placeholder =
+          priceRanges[categoryInput.value] || "e.g. 50000";
+      });
+
+      categoryInput.addEventListener("focus", () => {
+        renderDropdown(categoryInput.value);
+        customDropdown.classList.remove("hidden");
+      });
+
+      dropdownArrow.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (customDropdown.classList.contains("hidden")) {
+          renderDropdown("");
+          customDropdown.classList.remove("hidden");
+          categoryInput.focus();
+        } else {
+          customDropdown.classList.add("hidden");
+        }
+      });
+
+      document.addEventListener("click", (e) => {
+        if (
+          !categoryInput.contains(e.target) &&
+          !dropdownArrow.contains(e.target) &&
+          !customDropdown.contains(e.target)
+        ) {
+          customDropdown.classList.add("hidden");
+        }
+      });
+
+      function updateCategoryList(newCategories = []) {
+        let combined = [
+          "Laptop",
+          "Phone",
+          "Skincare",
+          "Furniture",
+          "Appliances",
+          "Fashion",
+          "Grocery",
+          "Sports",
+          "Auto",
+          ...newCategories,
+        ];
+        masterCategories = [...new Set(combined)];
+        renderDropdown(categoryInput.value);
+      }
 
       function switchTab(tabId) {
         if (tabId === "supplier-scoring") {
@@ -422,7 +538,6 @@
         }
       }
 
-      // রেন্ডার ফাইল লিস্ট
       function renderUploadedFiles() {
         const list = document.getElementById("uploadedFilesList");
         if (uploadedFiles.length === 0) {
@@ -446,10 +561,8 @@
         });
       }
 
-      // ডিলিট ফাইল লজিক
       async function deleteFile(filename) {
         if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
-
         try {
           const response = await fetch(`${renderAPIUrl}/api/delete_csv`, {
             method: "POST",
@@ -461,20 +574,9 @@
           if (response.ok) {
             uploadedFiles = uploadedFiles.filter((f) => f !== filename);
             renderUploadedFiles();
-
-            const customGroup = document.getElementById("custom-optgroup");
-            customGroup.innerHTML = "";
-            if (result.new_categories && result.new_categories.length > 0) {
-              result.new_categories.forEach((cat) => {
-                const option = document.createElement("option");
-                option.value = cat;
-                option.innerText = `${cat} (Uploaded)`;
-                customGroup.appendChild(option);
-              });
-              customGroup.classList.remove("hidden");
-            } else {
-              customGroup.classList.add("hidden");
-              document.getElementById("category").value = "Laptop";
+            updateCategoryList(result.new_categories);
+            if (!result.new_categories || result.new_categories.length === 0) {
+              categoryInput.value = "";
             }
             alert(`${filename} has been deleted successfully.`);
           }
@@ -522,21 +624,12 @@
                 "text-xs font-semibold mt-2 text-green-400";
               statusText.innerText = `${result.message}`;
 
-              // ফাইলে লিস্টে অ্যাড করা
               if (!uploadedFiles.includes(result.filename)) {
                 uploadedFiles.push(result.filename);
                 renderUploadedFiles();
               }
 
-              const customGroup = document.getElementById("custom-optgroup");
-              customGroup.innerHTML = "";
-              result.new_categories.forEach((cat) => {
-                const option = document.createElement("option");
-                option.value = cat;
-                option.innerText = `${cat} (Uploaded)`;
-                customGroup.appendChild(option);
-              });
-              customGroup.classList.remove("hidden");
+              updateCategoryList(result.new_categories);
               switchTab("supplier-scoring");
             } else {
               statusText.className = "text-xs font-semibold mt-2 text-red-400";
@@ -555,8 +648,14 @@
           e.preventDefault();
           const btn = document.getElementById("searchBtn");
           const tableBody = document.getElementById("tableBody");
-          const category = document.getElementById("category").value;
-          const maxPriceInput = document.getElementById("priceLimit").value; // ইউজার ইনপুট
+          const category = document.getElementById("categoryInput").value;
+          const maxPriceInput = document.getElementById("priceLimit").value;
+
+          // 🛠️ ইম্প্রুভমেন্ট: ক্যাটাগরি ফাঁকা থাকলে অ্যালার্ট দিবে
+          if (!category.trim()) {
+            alert("Please type or select a market category first!");
+            return;
+          }
 
           btn.innerHTML = "Searching...";
 
@@ -576,7 +675,6 @@
               let totalScore = 0,
                 poorCount = 0;
 
-              // 🛠️ রিয়েল প্রাইস ফিল্টারিং লজিক (ইউজারের ইনপুট অনুযায়ী)
               let finalSuppliers = result.suppliers;
               if (maxPriceInput && maxPriceInput.trim() !== "") {
                 const maxPrice = parseFloat(maxPriceInput);
