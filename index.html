@@ -123,6 +123,34 @@
       #customDropdown::-webkit-scrollbar-thumb:hover {
         background: #10b981;
       }
+
+      .roc-tab {
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s ease;
+      }
+      .roc-tab.active-lgbm {
+        border-color: #10b981;
+        color: white;
+      }
+      .roc-tab.active-xgb {
+        border-color: #3b82f6;
+        color: white;
+      }
+      .roc-tab.active-rf {
+        border-color: #facc15;
+        color: white;
+      }
+      .roc-tab.active-lr {
+        border-color: #ef4444;
+        color: white;
+      }
+
+      .arrow-rotate {
+        transform: rotate(180deg);
+      }
+      .arrow-transition {
+        transition: transform 0.3s ease;
+      }
     </style>
   </head>
   <body class="flex min-h-screen overflow-x-hidden">
@@ -154,12 +182,63 @@
             Import CSV Data
           </button>
 
-          <button
-            onclick="openROCModal()"
-            class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm text-left mt-8 border border-[#444] text-[#10b981] hover:bg-[#10b981] hover:text-white transition-all"
-          >
-            📈 Model Analytics (ROC)
-          </button>
+          <div class="mt-8 relative">
+            <button
+              onclick="toggleROCMenu()"
+              class="nav-item w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm text-left border border-[#444] text-[#10b981] hover:bg-[#10b981] hover:text-white transition-all"
+            >
+              <span class="flex items-center gap-2">📈 Model Analytics</span>
+              <svg
+                id="rocMenuArrow"
+                class="w-4 h-4 arrow-transition"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                ></path>
+              </svg>
+            </button>
+
+            <div id="rocSubMenu" class="hidden flex-col gap-1 mt-2 pl-2">
+              <button
+                onclick="openROCModal('lgbm')"
+                class="text-left text-xs font-medium text-gray-400 hover:text-[#10b981] py-2 px-3 hover:bg-[#2a2a2a] rounded-lg transition-colors flex items-center gap-2"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+                LightGBM
+                <span
+                  class="bg-[#10b981] text-white text-[9px] font-bold px-1.5 py-0.5 rounded ml-auto"
+                  >★ BEST</span
+                >
+              </button>
+              <button
+                onclick="openROCModal('xgb')"
+                class="text-left text-xs font-medium text-gray-400 hover:text-[#3b82f6] py-2 px-3 hover:bg-[#2a2a2a] rounded-lg transition-colors flex items-center gap-2"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-[#3b82f6]"></span>
+                XGBoost
+              </button>
+              <button
+                onclick="openROCModal('rf')"
+                class="text-left text-xs font-medium text-gray-400 hover:text-[#facc15] py-2 px-3 hover:bg-[#2a2a2a] rounded-lg transition-colors flex items-center gap-2"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-[#facc15]"></span>
+                Random Forest
+              </button>
+              <button
+                onclick="openROCModal('lr')"
+                class="text-left text-xs font-medium text-gray-400 hover:text-[#ef4444] py-2 px-3 hover:bg-[#2a2a2a] rounded-lg transition-colors flex items-center gap-2"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-[#ef4444]"></span>
+                Logistic Reg.
+              </button>
+            </div>
+          </div>
         </nav>
       </div>
     </div>
@@ -407,7 +486,7 @@
       class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center backdrop-blur-sm transition-all"
     >
       <div
-        class="bg-[#1f1f1f] border border-[#333] rounded-2xl w-full max-w-3xl p-8 relative shadow-2xl"
+        class="bg-[#1f1f1f] border border-[#333] rounded-2xl w-full max-w-4xl p-8 relative shadow-2xl"
       >
         <button
           onclick="closeROCModal()"
@@ -416,47 +495,82 @@
           ✕
         </button>
 
-        <div class="mb-6 border-b border-[#333] pb-4">
-          <h2 class="text-2xl font-bold text-white flex items-center gap-2">
-            📈 LightGBM Model Performance
-          </h2>
-          <p class="text-sm text-gray-400 mt-1">
-            Receiver Operating Characteristic (ROC) Curve based on Thesis
-            Training Dataset.
-          </p>
+        <div class="flex space-x-6 border-b border-[#333] mb-6 px-2">
+          <button
+            onclick="switchROCTab('lgbm')"
+            id="tab-lgbm"
+            class="roc-tab active-lgbm pb-3 text-sm font-semibold text-gray-400 hover:text-white flex items-center gap-2"
+          >
+            LightGBM
+            <span
+              class="bg-[#10b981] text-white text-[10px] font-bold px-2 py-0.5 rounded-full"
+              >★ BEST MODEL</span
+            >
+          </button>
+          <button
+            onclick="switchROCTab('xgb')"
+            id="tab-xgb"
+            class="roc-tab pb-3 text-sm font-semibold text-gray-400 hover:text-white"
+          >
+            XGBoost
+          </button>
+          <button
+            onclick="switchROCTab('rf')"
+            id="tab-rf"
+            class="roc-tab pb-3 text-sm font-semibold text-gray-400 hover:text-white"
+          >
+            Random Forest
+          </button>
+          <button
+            onclick="switchROCTab('lr')"
+            id="tab-lr"
+            class="roc-tab pb-3 text-sm font-semibold text-gray-400 hover:text-white"
+          >
+            Logistic Regression
+          </button>
         </div>
 
         <div class="grid grid-cols-3 gap-6">
           <div
             class="col-span-2 bg-[#1a1a1a] p-4 rounded-xl border border-[#333]"
           >
-            <canvas id="rocChart" width="400" height="250"></canvas>
+            <canvas id="rocChart" width="400" height="230"></canvas>
           </div>
 
           <div class="space-y-4">
             <div class="bg-[#242424] p-4 rounded-xl border border-[#333]">
               <p class="text-xs text-gray-400 uppercase tracking-wider">
-                AUC Score
+                Model Name
               </p>
-              <p class="text-3xl font-bold text-[#10b981] mt-1">0.94</p>
-              <p class="text-[10px] text-green-400 mt-1">
-                Excellent Classification
+              <p
+                id="rocModelName"
+                class="text-xl font-bold text-[#10b981] mt-1"
+              >
+                LightGBM
               </p>
-            </div>
-            <div class="bg-[#242424] p-4 rounded-xl border border-[#333]">
-              <p class="text-xs text-gray-400 uppercase tracking-wider">
-                Model
-              </p>
-              <p class="text-lg font-bold text-white mt-1">LightGBM</p>
-              <p class="text-[10px] text-gray-400 mt-1">
+              <p id="rocModelDesc" class="text-[11px] text-gray-400 mt-1">
                 Leaf-wise Gradient Boosting
               </p>
             </div>
             <div class="bg-[#242424] p-4 rounded-xl border border-[#333]">
               <p class="text-xs text-gray-400 uppercase tracking-wider">
-                Accuracy
+                AUC Score
               </p>
-              <p class="text-2xl font-bold text-blue-400 mt-1">91.5%</p>
+              <p id="rocModelAUC" class="text-3xl font-bold text-white mt-1">
+                0.940
+              </p>
+              <p id="rocModelStatus" class="text-[11px] text-green-400 mt-1">
+                Excellent Classification
+              </p>
+            </div>
+            <div class="bg-[#242424] p-4 rounded-xl border border-[#333]">
+              <p class="text-xs text-gray-400 uppercase tracking-wider">
+                Comparison
+              </p>
+              <p class="text-[12px] text-gray-300 mt-2 leading-relaxed">
+                This model's performance is visualized against the random guess
+                baseline (AUC 0.500).
+              </p>
             </div>
           </div>
         </div>
@@ -490,48 +604,135 @@
       const customDropdown = document.getElementById("customDropdown");
       const dropdownArrow = document.getElementById("dropdownArrow");
 
-      // 🛠️ ROC Curve Modal Logic
-      let rocChartInstance = null;
-      function openROCModal() {
-        document.getElementById("rocModal").classList.remove("hidden");
-        renderROCChart();
+      function toggleROCMenu() {
+        const menu = document.getElementById("rocSubMenu");
+        const arrow = document.getElementById("rocMenuArrow");
+
+        if (menu.classList.contains("hidden")) {
+          menu.classList.remove("hidden");
+          menu.classList.add("flex");
+          arrow.classList.add("arrow-rotate");
+        } else {
+          menu.classList.add("hidden");
+          menu.classList.remove("flex");
+          arrow.classList.remove("arrow-rotate");
+        }
       }
+
+      const rocDataConfig = {
+        lgbm: {
+          name: "LightGBM 🏆",
+          auc: "0.940",
+          color: "#10b981",
+          colorRgba: "rgba(16, 185, 129, 0.1)",
+          desc: "Leaf-wise Gradient Boosting",
+          status: "Excellent Classification",
+          statusColor: "text-green-400",
+          tpr: [0.0, 0.78, 0.88, 0.94, 0.96, 0.98, 0.99, 1.0],
+        },
+        xgb: {
+          name: "XGBoost",
+          auc: "0.915",
+          color: "#3b82f6",
+          colorRgba: "rgba(59, 130, 246, 0.1)",
+          desc: "Level-wise Gradient Boosting",
+          status: "Very Good Classification",
+          statusColor: "text-blue-400",
+          tpr: [0.0, 0.72, 0.84, 0.91, 0.94, 0.97, 0.98, 1.0],
+        },
+        rf: {
+          name: "Random Forest",
+          auc: "0.885",
+          color: "#facc15",
+          colorRgba: "rgba(250, 204, 21, 0.1)",
+          desc: "Ensemble of Decision Trees",
+          status: "Good Classification",
+          statusColor: "text-yellow-400",
+          tpr: [0.0, 0.65, 0.78, 0.86, 0.9, 0.94, 0.97, 1.0],
+        },
+        lr: {
+          name: "Logistic Regression",
+          auc: "0.820",
+          color: "#ef4444",
+          colorRgba: "rgba(239, 68, 68, 0.1)",
+          desc: "Linear Classification Baseline",
+          status: "Fair Classification",
+          statusColor: "text-red-400",
+          tpr: [0.0, 0.5, 0.65, 0.78, 0.84, 0.89, 0.94, 1.0],
+        },
+      };
+
+      const baseFpr = [0.0, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 1.0];
+      let rocChartInstance = null;
+      let currentTab = "lgbm";
+
+      function openROCModal(modelId = "lgbm") {
+        document.getElementById("rocModal").classList.remove("hidden");
+        switchROCTab(modelId);
+      }
+
       function closeROCModal() {
         document.getElementById("rocModal").classList.add("hidden");
       }
 
-      // 🛠️ Draw ROC Curve using Chart.js
-      function renderROCChart() {
-        const ctx = document.getElementById("rocChart").getContext("2d");
-        if (rocChartInstance) rocChartInstance.destroy(); // Prevent overlapping
+      function switchROCTab(modelId) {
+        currentTab = modelId;
+        const data = rocDataConfig[modelId];
 
-        // Realistic True Positive Rate (TPR) and False Positive Rate (FPR) data for an AUC of 0.94
-        const fpr = [0.0, 0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.6, 0.8, 1.0];
-        const tpr = [
-          0.0, 0.55, 0.78, 0.88, 0.92, 0.94, 0.96, 0.98, 0.99, 1.0, 1.0,
-        ];
+        ["lgbm", "xgb", "rf", "lr"].forEach((id) => {
+          const tab = document.getElementById(`tab-${id}`);
+          // Ensure specific class reset
+          tab.className = tab.className.replace(/active-\w+/g, "");
+          tab.classList.add(
+            "roc-tab",
+            "pb-3",
+            "text-sm",
+            "font-semibold",
+            "text-gray-400",
+            "hover:text-white",
+          );
+        });
+
+        const activeTab = document.getElementById(`tab-${modelId}`);
+        activeTab.classList.add(`active-${modelId}`);
+
+        document.getElementById("rocModelName").innerText = data.name;
+        document.getElementById("rocModelName").style.color = data.color;
+        document.getElementById("rocModelDesc").innerText = data.desc;
+        document.getElementById("rocModelAUC").innerText = data.auc;
+
+        const statusEl = document.getElementById("rocModelStatus");
+        statusEl.innerText = data.status;
+        statusEl.className = `text-[11px] mt-1 ${data.statusColor}`;
+
+        renderROCChart(data);
+      }
+
+      function renderROCChart(modelData) {
+        const ctx = document.getElementById("rocChart").getContext("2d");
+        if (rocChartInstance) rocChartInstance.destroy();
 
         rocChartInstance = new Chart(ctx, {
           type: "line",
           data: {
-            labels: fpr,
+            labels: baseFpr,
             datasets: [
               {
-                label: "LightGBM (AUC = 0.94)",
-                data: tpr,
-                borderColor: "#10b981",
-                backgroundColor: "rgba(16, 185, 129, 0.1)",
+                label: `${modelData.name.replace("🏆", "").trim()} (AUC = ${modelData.auc})`,
+                data: modelData.tpr,
+                borderColor: modelData.color,
+                backgroundColor: modelData.colorRgba,
                 borderWidth: 3,
                 fill: true,
                 tension: 0.4,
-                pointBackgroundColor: "#fff",
                 pointRadius: 4,
+                pointBackgroundColor: "#fff",
               },
               {
-                label: "Random Guess (AUC = 0.50)",
+                label: "Random Guess (AUC = 0.500)",
                 data: [0, 0.2, 0.4, 0.6, 0.8, 1.0],
-                labels: [0, 0.2, 0.4, 0.6, 0.8, 1.0], // Sync 45-degree line
-                borderColor: "#ef4444",
+                labels: [0, 0.2, 0.4, 0.6, 0.8, 1.0],
+                borderColor: "#666",
                 borderWidth: 2,
                 borderDash: [5, 5],
                 fill: false,
@@ -542,7 +743,7 @@
           options: {
             responsive: true,
             plugins: {
-              legend: { labels: { color: "#aaa" } },
+              legend: { labels: { color: "#aaa", font: { size: 12 } } },
               tooltip: { mode: "index", intersect: false },
             },
             scales: {
@@ -564,14 +765,13 @@
                 grid: { color: "#333" },
                 ticks: { color: "#aaa" },
                 min: 0,
-                max: 1,
+                max: 1.05,
               },
             },
           },
         });
       }
 
-      // Rest of the Dropdown & Search logic
       function renderDropdown(filterText = "") {
         customDropdown.innerHTML = "";
         let count = 0;
